@@ -5,8 +5,8 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from typing import List
-import matplotlib.colors as mcolors
 from argparse import ArgumentParser
+import matplotlib.ticker as ticker
 
 class Jobs:
     def __init__(self, id, startTime, finishTime, machine, nbcores):
@@ -29,8 +29,7 @@ class Scheduling:
         self.min_date = 0
         self.max_date = math.inf
         self.jobs : List[Jobs] = []
-        self.y_increment = 2
-        self.y_height = 1.5
+        self.y_height = 2
         self.y_positions = {}
 
     def intersection(self, lst1, lst2):
@@ -50,7 +49,7 @@ class Scheduling:
                 self.y_positions[machine_key] = {}
                 for core in range(0, machine_value["cores"]):
                     self.y_positions[machine_key][core] = y_pos
-                    y_pos += self.y_increment
+                    y_pos += self.y_height
                 for x in range(0, self.max_date - self.min_date + 1):
                     self.scheduling[x][int(machine_key)] = [c for c in range(0, machine_value["cores"])]
 
@@ -75,13 +74,17 @@ class Scheduling:
         fig, ax = plt.subplots(figsize=(20, 20))
         y_labels = []
         y_positions = []
+        y_cores_position = []
+        y_labels_position = []
         y_max = 0
         for y_machine, y_cores in self.y_positions.items():
             for label, pos in y_cores.items():
                 if label == 0:
                     y_labels.append(y_machine)
                     y_positions.append(pos)
+                y_cores_position.append(pos)
                 y_max = pos
+            y_labels_position.append(y_max - (len(y_cores) / 2))
         colors = ["tab:blue", 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', "tab:brown", "tab:pink", "tab:gray", "tab:olive", "tab:cyan"]
         h = list("/|X")
         colorIndex = 0
@@ -107,7 +110,7 @@ class Scheduling:
                 ax.add_artist(rect)
                 rect.axes.annotate(
                     str(job.id),
-                    (x0+(duration/2), self.y_positions[str(job.machine)][core]+0.5),
+                    (x0+(duration/2), self.y_positions[str(job.machine)][core]+1),
                     color='black',
                     fontsize='small',
                     ha='center',
@@ -115,13 +118,17 @@ class Scheduling:
                 )                
             colorIndex += 1
         y_max += self.y_height
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Machine/Core')
+        ax.set_xlabel('Time', size=16)
+        ax.set_ylabel('Machine/Core', size=16)
         ax.yaxis.set_ticks(y_positions, y_labels)
         ax.set_xlim(self.min_date, self.max_date)
-        ax.set_ylim(-1, y_max)
+        ax.set_ylim(0, y_max)
+        ax.set_yticks(y_cores_position, minor=True)
+        ax.tick_params(axis='y', which="major", length=8, pad=5)
+        ax.grid(visible=True, which='both')
 
-        plt.tight_layout()
+        fig.tight_layout()
+
         if savefig:
             plt.savefig(savefig)
             plt.close()
